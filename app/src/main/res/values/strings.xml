@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">30 dias de juegos</string>
+    <string name="home_title">30 días de juegos</string>
+    <string name="home_subtitle">Descubre un juego cada día</string>
+    <string name="domino_image_description">Fichas de dominó</string>
+    <string name="day_one">DÍA 1</string>
+    <string name="domino_title">Dominó</string>
+    <string name="domino_description">Un juego de estrategia para todas las edades. Aprende a colocar tus fichas haciendo coincidir los puntos y sé la primera persona en quedarte sin piezas.</string>
+</resources>
