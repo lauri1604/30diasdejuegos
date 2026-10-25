@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,17 +34,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.a30diasdejuegos.R
+import com.example.a30diasdejuegos.data.Dataresource
+import com.example.a30diasdejuegos.model.Game
 import com.example.a30diasdejuegos.ui.theme._30DiasDeJuegosTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val games = Dataresource().loadGames()
         setContent {
             _30DiasDeJuegosTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.background
                 ) { innerPadding ->
                     Column(
                         modifier = Modifier
@@ -64,7 +69,10 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 24.sp
                         )
-                        GameDayCard()
+                        GameList(
+                            games = games,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -73,7 +81,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun GameDayCard(modifier: Modifier = Modifier) {
+private fun GameDayCard(game: Game, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -90,8 +98,8 @@ private fun GameDayCard(modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(R.drawable.domino_pack),
-                    contentDescription = stringResource(R.string.domino_image_description),
+                    painter = painterResource(game.imageResourceId),
+                    contentDescription = stringResource(game.nameResourceId),
                     modifier = Modifier
                         .size(width = 132.dp, height = 144.dp)
                         .clip(RoundedCornerShape(14.dp)),
@@ -103,31 +111,41 @@ private fun GameDayCard(modifier: Modifier = Modifier) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.day_one),
+                        text = stringResource(R.string.game_day_format, game.dayNumber),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 29.sp
                     )
                     Text(
-                        text = stringResource(R.string.domino_title),
+                        text = stringResource(game.nameResourceId),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 29.sp
                     )
-                    Icon(
-                        painter = painterResource(R.drawable.ic_expand_more),
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp).align(Alignment.End),
-                        tint = MaterialTheme.colorScheme.primary,
-
-                    )
+                    Row(
+                        modifier = Modifier.align(Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Ver más",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 22.sp
+                        )
+                        Icon(
+                            painter = painterResource(R.drawable.ic_expand_more),
+                            contentDescription = "ver más",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(34.dp)
+                        )
+                    }
                 }
             }
             Text(
-                text = stringResource(R.string.domino_description),
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 18.dp),
+                text = stringResource(game.descriptionResourceId),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 24.sp
@@ -136,10 +154,40 @@ private fun GameDayCard(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun GameList(games: List<Game>, modifier: Modifier = Modifier) {
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(games, key = { game -> game.dayNumber }) { game ->
+            GameDayCard(game = game)
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     _30DiasDeJuegosTheme {
-        GameDayCard()
+        GameDayCard(
+            game = Game(
+                dayNumber = 1,
+                nameResourceId = R.string.domino_title,
+                descriptionResourceId = R.string.domino_description,
+                imageResourceId = R.drawable.domino_pack
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+fun GameListPreview() {
+    _30DiasDeJuegosTheme {
+        GameList(
+            games = Dataresource().loadGames(),
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
