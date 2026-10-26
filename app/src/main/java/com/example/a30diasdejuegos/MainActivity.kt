@@ -1,10 +1,16 @@
 package com.example.a30diasdejuegos
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +29,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,6 +92,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun GameDayCard(game: Game, modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -125,31 +136,43 @@ private fun GameDayCard(game: Game, modifier: Modifier = Modifier) {
                         fontSize = 29.sp
                     )
                     Row(
-                        modifier = Modifier.align(Alignment.End),
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickable { expanded = !expanded },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "Ver más",
+                            text = if (expanded) "Ver menos" else "Ver más",
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 22.sp
                         )
                         Icon(
                             painter = painterResource(R.drawable.ic_expand_more),
-                            contentDescription = "ver más",
+                            contentDescription = if (expanded) "Ver menos" else "Ver más",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(34.dp)
                         )
                     }
                 }
             }
-            Text(
-                text = stringResource(game.descriptionResourceId),
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 24.sp
-            )
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(tween(250)) + fadeIn(tween(250)),
+                exit = shrinkVertically(tween(250)) + fadeOut(tween(250))
+            ) {
+                Text(
+                    text = stringResource(game.descriptionResourceId),
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 24.dp
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 24.sp
+                )
+            }
         }
     }
 }
