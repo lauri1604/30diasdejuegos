@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -11,8 +12,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +23,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,10 +33,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,8 +97,24 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun GameDayCard(game: Game, modifier: Modifier = Modifier) {
+private fun GameDayCard(
+    game: Game,
+    modifier: Modifier = Modifier,
+    onExpansionFrame: suspend () -> Unit = {}
+) {
     var expanded by remember { mutableStateOf(false) }
+    val descriptionVisibility = remember { MutableTransitionState(false) }
+
+    LaunchedEffect(expanded) {
+        descriptionVisibility.targetState = expanded
+        if (expanded) {
+            while (!descriptionVisibility.isIdle) {
+                withFrameNanos { }
+                onExpansionFrame()
+            }
+        }
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -157,9 +179,9 @@ private fun GameDayCard(game: Game, modifier: Modifier = Modifier) {
                 }
             }
             AnimatedVisibility(
-                visible = expanded,
-                enter = expandVertically(tween(250)) + fadeIn(tween(250)),
-                exit = shrinkVertically(tween(250)) + fadeOut(tween(250))
+                visibleState = descriptionVisibility,
+                enter = expandVertically(tween(2500)) + fadeIn(tween(2500)),
+                exit = shrinkVertically(tween(2500)) + fadeOut(tween(2500))
             ) {
                 Text(
                     text = stringResource(game.descriptionResourceId),
@@ -179,12 +201,27 @@ private fun GameDayCard(game: Game, modifier: Modifier = Modifier) {
 
 @Composable
 fun GameList(games: List<Game>, modifier: Modifier = Modifier) {
+    val listState = rememberLazyListState()
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        state = listState
     ) {
-        items(games, key = { game -> game.dayNumber }) { game ->
-            GameDayCard(game = game)
+        itemsIndexed(games, key = { _, game -> game.dayNumber }) { index, game ->
+            GameDayCard(
+                game = game,
+                onExpansionFrame = {
+                    val item = listState.layoutInfo.visibleItemsInfo
+                        .firstOrNull { it.index == index }
+                    val overflow = item?.let {
+                        it.offset + it.size - listState.layoutInfo.viewportEndOffset
+                    } ?: 0
+                    if (overflow > 0) {
+                        listState.scrollBy(overflow.toFloat())
+                    }
+                }
+            )
         }
     }
 }
